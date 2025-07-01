@@ -39,7 +39,9 @@ void loop() {
     }
     
     // Atualiza ângulo e coleta dado
-    Serial.println(anguloAtual);
+    Serial.print(anguloAtual);
+    Serial.print(",");
+    Serial.println(analogRead(A0));
     anguloAtual += incrementoAngulo;
     
     
@@ -51,9 +53,6 @@ void loop() {
     // Reinicia após 360°
     anguloAtual = 0;
     contagem += 1;
-    int valorSensor = analogRead(A0);
-    Serial.print("Intensidade : ");
-    Serial.println(valorSensor);
     Serial.println("Fim do ciclo");
     delay(2000);
   }
