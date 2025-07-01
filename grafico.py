@@ -1,57 +1,39 @@
 import serial
 import matplotlib.pyplot as plt
-import numpy as np
 
-# Configuração da porta serial
-porta_serial = serial.Serial('COM6', 9600, timeout=2)
-plt.ion()  # Modo interativo
+# Configura a porta e velocidade da serial
+porta = 'COM3'  # Altere para a porta correta (ex: /dev/ttyUSB0 no Linux/Mac)
+baudrate = 9600
+ser = serial.Serial(porta, baudrate, timeout=1)
 
-# Listas para armazenar dados
+# Armazena os dados recebidos
 angulos = []
-valores = []
+intensidades = []
 
-# Configuração do gráfico
-fig, ax = plt.subplots()
-ax.set_xlabel("Ângulo (graus)")
-ax.set_ylabel("Valor do Sensor (A0)")
-ax.set_title("Leitura do Sensor vs. Ângulo do Motor")
-ax.grid(True)
+print("Coletando dados...")
 
-try:
-    while True:
-        if porta_serial.in_waiting > 0:
-            linha = porta_serial.readline().decode('utf-8').strip()
-            
-            if "," in linha:  # Dados válidos
-                angulo, valor = linha.split(",")
-                angulos.append(int(angulo))
-                valores.append(int(valor))
-                
-                # Atualiza gráfico
-                ax.clear()
-                ax.plot(angulos, valores, 'bo-')
-                ax.set_xlim(0, 360)
-                plt.pause(0.01)
-                
-            elif "Fim do ciclo" in linha:
-                print("Ciclo completo!")
-                break
+# Loop de leitura (10 ciclos, com 12 medidas por ciclo = 120 leituras)
+while len(angulos) < 120:
+    try:
+        linha = ser.readline().decode('utf-8').strip()
+        if ',' in linha:
+            partes = linha.split(',')
+            angulo = int(partes[0])
+            intensidade = int(partes[1])
+            angulos.append(angulo)
+            intensidades.append(intensidade)
+            print(f"Ângulo: {angulo}, Intensidade: {intensidade}")
+    except Exception as e:
+        print("Erro:", e)
 
-except KeyboardInterrupt:
-    print("Leitura interrompida")
+ser.close()
 
-finally:
-    porta_serial.close()
-    plt.ioff()
-    
-    # Salva dados em CSV
-    np.savetxt("dados_angulo_sensor.csv", np.column_stack((angulos, valores)), 
-               delimiter=",", header="Ângulo,Valor", fmt="%d")
-    
-    # Gráfico final
-    plt.figure(figsize=(10, 5))
-    plt.plot(angulos, valores, 'r-')
-    plt.xlabel("Ângulo (graus)")
-    plt.ylabel("Valor do Sensor (A0)")
-    plt.grid(True)
-    plt.show()
+# Plotagem
+plt.figure(figsize=(10,5))
+plt.plot(angulos, intensidades, 'o-', label='Intensidade de luz')
+plt.xlabel('Ângulo (°)')
+plt.ylabel('Intensidade (ADC)')
+plt.title('Distribuição de Intensidade por Ângulo')
+plt.grid(True)
+plt.legend()
+plt.show()
